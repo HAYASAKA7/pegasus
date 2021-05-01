@@ -1,0 +1,5 @@
+build with i686-w64-mingw32-gcc in ubuntu
+1)libgcc_s_dw2-1.dll
+2)libwinpthread-1.dll
+3)libusb-1.0.dll
+4)libftdi1.dll

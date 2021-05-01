@@ -1,0 +1,115 @@
+# Hisilicon Tech. Co., Ltd.
+# USAGE:
+# cmd: bin\openocd.exe -f interface\Hi-ft2232d-ftdi.cfg  -f target\HI3861L-RISCV-JTAG -d3 -l log.d/20200810-1.txt
+# cmd: telnet localhost 4444
+
+# enable coresight-swd mode
+# mww 0x40010260 1
+
+transport select jtag
+set  _CHIPNAME hi3861
+set _CPUTAPID 0x0000076d
+
+adapter_khz 500
+jtag newtap $_CHIPNAME cpu -irlen 5  -expected-id $_CPUTAPID
+
+set _TARGETNAME $_CHIPNAME.cpu
+target create $_TARGETNAME riscv -chain-position $_TARGETNAME
+
+# 0X7c0~0x7cf
+riscv expose_csrs 932-943,1984-1999
+riscv set_prefer_sba off
+
+init
+halt
+poll off
+# If load_image fails, reduce the FREQUENCY
+adapter_khz 6000
+# 15000 may ok
+
+proc load_bin_erase { } {
+reset halt
+# Close I/D Cache
+reg csr0x7c0 0
+reg csr0x7c1 0
+
+# reset SFC
+mww 0x4001003c 0x1fe3
+mww 0x4001003c 0x1fff
+sleep 10
+
+# enable flash write
+mww 0x40800200 0xC080EB1E
+
+# erase whole flash chip
+mww 0x40800308 0x6
+mww 0x40800300 0x3 
+mww 0x40800308 0xC7
+mww 0x40800300 0x3
+sleep 6000
+
+load_image "load_dump\\Hi3861_demo_burn_demo_ok.bin" 0x400000 bin
+dump_image "load_dump\\Hi3861_demo_burn_demo_ok-erase.bin" 0x400000 766800
+}
+
+proc load_bin { } {
+reset halt
+# Close I/D Cache
+reg csr0x7c0 0
+reg csr0x7c1 0
+
+# reset SFC
+mww 0x4001003c 0x1fe3
+mww 0x4001003c 0x1fff
+
+# enable flash write
+mww 0x40800200 0xC080EB1E
+
+sleep 10
+
+load_image "load_dump\\Hi3861_demo_burn_demo_ok.bin" 0x500000 bin
+dump_image "load_dump\\Hi3861_demo_burn_demo_ok-noerase.bin" 0x500000 766800
+}
+
+proc load_bin_erase_histreaming { } {
+reset halt
+# Close I/D Cache
+reg csr0x7c0 0
+reg csr0x7c1 0
+
+# reset SFC
+mww 0x4001003c 0x1fe3
+mww 0x4001003c 0x1fff
+sleep 10
+
+# enable flash write
+mww 0x40800200 0xC080EB1E
+
+# erase whole flash chip
+mww 0x40800308 0x6
+mww 0x40800300 0x3 
+mww 0x40800308 0xC7
+mww 0x40800300 0x3
+sleep 6000
+
+load_image "load_dump\\Hi3861_demo_burn_histreaming.bin" 0x400000 bin
+dump_image "load_dump\\Hi3861_demo_burn_histreaming-w1d1.bin" 0x400000 612464
+}
+
+proc load_bin_histreaming { } {
+reset halt
+# Close I/D Cache
+reg csr0x7c0 0
+reg csr0x7c1 0
+
+# reset SFC
+mww 0x4001003c 0x1fe3
+mww 0x4001003c 0x1fff
+sleep 10
+
+# enable flash write
+mww 0x40800200 0xC080EB1E
+
+load_image "load_dump\\Hi3861_demo_burn_histreaming.bin" 0x500000 bin
+dump_image "load_dump\\Hi3861_demo_burn_histreaming-w1d1.bin" 0x500000 612464
+}
